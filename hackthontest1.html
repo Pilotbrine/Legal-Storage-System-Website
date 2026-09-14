@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoD & Police - Secure Legal DMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; 
+            color: #e2e8f0;
+        }
+        .hash-font { font-family: 'JetBrains Mono', monospace; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden selection:bg-emerald-500 selection:text-white bg-grid">
+
+    <!-- MAIN LOGIN VIEW -->
+    <div id="auth-view" class="fixed inset-0 z-40 bg-slate-950 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-slate-900 p-8 rounded-xl border border-slate-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-md relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-blue-500 to-emerald-500"></div>
+            
+            <div class="text-center mb-6 mt-2">
+                <i class="fas fa-building-shield text-emerald-500 text-5xl mb-3"></i>
+                <h1 class="text-2xl font-bold text-white tracking-widest uppercase">MoD & Police</h1>
+                <p class="text-slate-400 text-xs mt-1 uppercase tracking-widest font-bold">Secure Document Management System</p>
+            </div>
+            
+            <div id="auth-form-container" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Badge ID</label>
+                    <div class="relative">
+                        <i class="fas fa-id-card absolute left-3 top-3 text-slate-500"></i>
+                        <input type="text" id="auth-id" required class="w-full bg-slate-950 border border-slate-700 rounded p-2 pl-10 text-white font-mono focus:outline-none focus:border-emerald-500 transition-colors" placeholder="OFFICER-XXXX or ADMIN-01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Access Passcode</label>
+                    <div class="relative">
+                        <i class="fas fa-fingerprint absolute left-3 top-3 text-slate-500"></i>
+                        <input type="password" id="auth-pass" required class="w-full bg-slate-950 border border-slate-700 rounded p-2 pl-10 pr-10 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="••••••••">
+                        <button type="button" onclick="togglePassword('auth-pass', this)" class="absolute right-3 top-3 text-slate-500 hover:text-emerald-500 focus:outline-none">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Clearance Level (Registration Only)</label>
+                    <div class="relative">
+                        <i class="fas fa-user-shield absolute left-3 top-3 text-slate-500"></i>
+                        <select id="auth-role" class="w-full bg-slate-950 border border-slate-700 rounded p-2 pl-10 text-white text-xs focus:outline-none focus:border-emerald-500">
+                            <option value="Investigator">Investigator (Level 1 - Auto Approved)</option>
+                            <option value="External Witness">External Witness (Level 0 - Auto Approved)</option>
+                            <option value="Supervisor">Supervisor (Level 2 - Requires Approval)</option>
+                            <option value="Admin">Admin (Level 3 - Requires Admin Approval)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="pt-2 flex flex-col space-y-3">
+                    <button type="button" id="btn-login" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)] tracking-wider uppercase text-sm">
+                        Authenticate Access
+                    </button>
+                    <div class="flex justify-between items-center text-xs text-slate-400 pt-1">
+                        <button type="button" onclick="openForgotModal()" class="hover:text-emerald-400 underline font-mono">Forgot Passcode?</button>
+                    </div>
+                    <div class="relative flex items-center py-1">
+                        <div class="flex-grow border-t border-slate-700"></div>
+                        <span class="flex-shrink-0 mx-4 text-slate-500 text-xs uppercase">Or</span>
+                        <div class="flex-grow border-t border-slate-700"></div>
+                    </div>
+                    <button type="button" id="btn-register" class="w-full bg-slate-800 border border-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded transition-colors text-sm">
+                        Register Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORGOT PASSWORD MODAL -->
+    <div id="forgot-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 p-6 rounded-lg max-w-sm w-full space-y-4">
+            <h3 class="text-lg font-bold text-white uppercase tracking-wider"><i class="fas fa-key text-emerald-500 mr-2"></i> Request Reset</h3>
+            <p class="text-xs text-slate-400">Submit a password reset request to system Administrators.</p>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Badge ID</label>
+                <input type="text" id="forgot-id" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs font-mono outline-none focus:border-emerald-500">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Reason / Case Reference</label>
+                <input type="text" id="forgot-reason" placeholder="e.g. Forgotten passcode" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs outline-none focus:border-emerald-500">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('forgot-modal').classList.add('hidden')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2 rounded text-xs uppercase font-bold">Cancel</button>
+                <button onclick="submitForgotPassword()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded text-xs uppercase font-bold tracking-wider">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PASSWORD RESET MODAL -->
+    <div id="admin-reset-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="bg-slate-900 border border-amber-500/50 p-6 rounded-lg max-w-sm w-full space-y-4">
+            <h3 class="text-lg font-bold text-amber-400 uppercase tracking-wider"><i class="fas fa-user-lock mr-2"></i> Approve Reset</h3>
+            <p class="text-xs text-slate-400">Set a temporary passcode for <span id="reset-target-badge" class="font-mono text-white font-bold"></span>.</p>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Temporary Passcode</label>
+                <input type="text" id="admin-temp-pass" placeholder="Enter new passcode" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs font-mono outline-none focus:border-amber-500">
+            </div>
+            <input type="hidden" id="reset-request-id">
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('admin-reset-modal').classList.add('hidden')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2 rounded text-xs uppercase font-bold">Cancel</button>
+                <button onclick="processAdminReset(true)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded text-xs uppercase font-bold">Approve</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex-shrink-0 flex flex-col hidden relative z-10">
+        <div class="p-6 border-b border-slate-800 bg-slate-950">
+            <h1 class="text-lg font-bold flex items-center gap-2 tracking-wider">
+                <i class="fas fa-building-shield text-emerald-500"></i>
+                <span class="text-white">MoD <span class="text-emerald-500">DMS</span></span>
+            </h1>
+            <div class="flex items-center gap-2 mt-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <p class="text-[10px] text-slate-400 uppercase tracking-widest font-mono" id="server-status">CONNECTED TO PYTHON SQL</p>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-4">
+            <nav class="space-y-2 px-3">
+                <button onclick="switchTab('upload')" id="nav-upload" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-md text-emerald-400 bg-slate-950 border border-slate-800 transition-colors shadow-inner">
+                    <i class="fas fa-file-shield w-5 text-center"></i> Secure Ingestion
+                </button>
+                <button onclick="switchTab('vault')" id="nav-vault" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border border-transparent">
+                    <i class="fas fa-vault w-5 text-center"></i> Classified Vault
+                </button>
+                <button onclick="switchTab('audit')" id="nav-audit" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border border-transparent">
+                    <i class="fas fa-list-check w-5 text-center"></i> Immutable Ledger
+                </button>
+            </nav>
+        </div>
+        
+        <div class="p-4 border-t border-slate-800 bg-slate-950">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-700">
+                    <i class="fas fa-id-badge text-xl"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Active Officer</p>
+                    <p id="user-display" class="text-sm font-mono font-bold text-emerald-400 truncate">OFFICER-XXXX</p>
+                    <p id="user-role-display" class="text-[10px] font-mono text-emerald-500 uppercase font-bold">ROLE: INVESTIGATOR</p>
+                </div>
+            </div>
+            <button id="btn-logout" onclick="location.reload()" class="w-full text-xs text-red-400 hover:text-white border border-red-900 hover:bg-red-600 py-2 rounded transition-colors uppercase font-bold tracking-wider">
+                Terminate Session
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main id="main-content" class="flex-1 bg-slate-950/50 flex flex-col hidden relative">
+        <header class="h-16 border-b border-slate-800 bg-slate-900/80 flex items-center px-6 justify-between backdrop-blur-md">
+            <h2 id="current-tab-title" class="text-xl font-bold tracking-widest uppercase text-white shadow-sm">Secure Ingestion</h2>
+            <div class="flex items-center gap-3 text-[10px] font-mono text-slate-400 border border-slate-700 rounded px-3 py-1 bg-slate-950">
+                <span class="text-emerald-500"><i class="fas fa-lock"></i> AES-GCM 256-bit</span>
+                <span class="text-blue-500"><i class="fas fa-hashtag"></i> SHA-256</span>
+                <span class="text-purple-400"><i class="fas fa-file-signature"></i> ECDSA Sign</span>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6 relative">
+            <!-- UPLOAD PANEL -->
+            <div id="view-upload" class="view-panel max-w-5xl mx-auto block">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-6 shadow-xl">
+                        <h3 class="text-lg font-bold text-white mb-4 border-b border-slate-800 pb-2">1. Document Details</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Document Category</label>
+                                <select id="doc-type" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm focus:border-emerald-500 outline-none">
+                                    <option value="FIR">First Information Report (FIR)</option>
+                                    <option value="Investigation">Investigation Record</option>
+                                    <option value="Charge Sheet">Charge Sheet</option>
+                                    <option value="Evidence">Digital Evidence</option>
+                                    <option value="Classified">Top Secret / Classified</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Time-Based Access Expiration (Hours)</label>
+                                <input type="number" id="time-limit-hours" min="0" placeholder="0 for permanent legal record" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm focus:border-emerald-500 outline-none font-mono">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">File Upload</label>
+                                <input type="file" id="file-input" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-300 text-sm focus:outline-none file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-emerald-400 hover:file:bg-slate-700">
+                            </div>
+                            
+                            <div class="pt-4 border-t border-slate-800">
+                                <label class="block text-xs font-bold text-emerald-500 uppercase mb-1"><i class="fas fa-key"></i> Set Decryption Password</label>
+                                <p class="text-[10px] text-slate-500 mb-2">This password is required by ANY officer to download and read this specific file.</p>
+                                <div class="relative">
+                                    <input type="password" id="file-password" class="w-full bg-slate-950 border border-emerald-900 rounded p-2 pr-10 text-white focus:border-emerald-500 outline-none font-mono" placeholder="Set a strong passcode...">
+                                    <button type="button" onclick="togglePassword('file-password', this)" class="absolute right-3 top-2 text-slate-500 hover:text-emerald-500 focus:outline-none">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button id="btn-process-upload" class="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded text-sm uppercase tracking-wider transition-colors shadow-[0_0_15px_rgba(16,185,129,0.2)] disabled:opacity-50">
+                                Sign, Encrypt & Submit to Vault
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-6 font-mono text-xs text-slate-400 flex flex-col h-full">
+                        <h3 class="text-sm font-bold text-slate-300 mb-4 border-b border-slate-800 pb-2 uppercase tracking-widest"><i class="fas fa-terminal"></i> Cryptography Terminal</h3>
+                        <div id="crypto-terminal" class="flex-1 overflow-y-auto space-y-2">
+                            <div class="text-slate-600">> System ready for ingestion.</div>
+                            <div class="text-slate-600">> Connected to Python SQL Backend.</div>
+                            <div class="text-slate-600">> ECDSA Signatures & PBKDF2 Enabled.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VAULT PANEL -->
+            <div id="view-vault" class="view-panel hidden">
+                <div class="bg-slate-900 border border-slate-700 rounded-lg shadow-xl overflow-hidden">
+                    <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-2.5 text-slate-500 text-sm"></i>
+                            <input type="text" id="search-vault" placeholder="Search FIRs, Cases..." class="bg-slate-900 border border-slate-700 rounded py-1.5 pl-9 pr-4 text-sm text-white focus:border-emerald-500 focus:outline-none w-64">
+                        </div>
+                        <span class="text-xs font-mono text-emerald-500 bg-emerald-900/20 px-3 py-1 rounded border border-emerald-900">CHAIN OF CUSTODY: ACTIVE</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="text-[10px] text-slate-500 bg-slate-950 uppercase tracking-widest border-b border-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3">Category</th>
+                                    <th class="px-6 py-3">Filename</th>
+                                    <th class="px-6 py-3">Uploader</th>
+                                    <th class="px-6 py-3">Expiration Status</th>
+                                    <th class="px-6 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vault-table-body" class="divide-y divide-slate-800 bg-slate-900"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUDIT & ADMIN APPROVAL PANEL -->
+            <div id="view-audit" class="view-panel hidden space-y-6">
+                <!-- ADMIN APPROVAL QUEUE -->
+                <div id="admin-approval-panel" class="bg-slate-900 border border-amber-500/30 rounded-lg shadow-xl overflow-hidden hidden space-y-4 p-4">
+                    <div>
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <h3 class="font-bold text-amber-400 uppercase tracking-wider text-sm"><i class="fas fa-user-check mr-2"></i> Pending User Registrations</h3>
+                            <button onclick="loadPendingApprovals()" class="text-xs text-slate-400 hover:text-white"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        </div>
+                        <table class="w-full text-left text-sm text-slate-300 mt-2">
+                            <thead class="text-[10px] text-slate-500 bg-slate-950 uppercase tracking-widest border-b border-slate-800">
+                                <tr>
+                                    <th class="px-4 py-2">Badge ID</th>
+                                    <th class="px-4 py-2">Requested Role</th>
+                                    <th class="px-4 py-2 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pending-users-table" class="divide-y divide-slate-800"></tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800 pt-2">
+                            <h3 class="font-bold text-amber-400 uppercase tracking-wider text-sm"><i class="fas fa-key mr-2"></i> Password Reset Requests</h3>
+                            <button onclick="loadPendingResets()" class="text-xs text-slate-400 hover:text-white"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        </div>
+                        <table class="w-full text-left text-sm text-slate-300 mt-2">
+                            <thead class="text-[10px] text-slate-500 bg-slate-950 uppercase tracking-widest border-b border-slate-800">
+                                <tr>
+                                    <th class="px-4 py-2">Badge ID</th>
+                                    <th class="px-4 py-2">Reason</th>
+                                    <th class="px-4 py-2 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pending-resets-table" class="divide-y divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AUDIT LEDGER -->
+                <div class="bg-slate-900 border border-slate-700 rounded-lg shadow-xl overflow-hidden flex flex-col" style="height: calc(100vh - 16rem);">
+                    <div class="p-4 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
+                        <h3 class="font-bold text-white uppercase tracking-wider text-sm"><i class="fas fa-link text-emerald-500 mr-2"></i> Immutable Chain-of-Custody Ledger</h3>
+                        <button onclick="loadAudit()" class="text-xs text-slate-400 hover:text-white"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <div class="p-6 bg-slate-950 flex-1 overflow-y-auto">
+                        <div class="relative border-l border-slate-800 ml-3 space-y-6" id="audit-timeline"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- INLINE SECURE DOCUMENT VIEWER MODAL -->
+    <div id="viewer-modal" class="fixed inset-0 z-[80] bg-black/95 flex flex-col hidden backdrop-blur-lg">
+        <div class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-eye text-emerald-500 text-lg"></i>
+                <h3 id="viewer-filename" class="text-sm font-bold text-white font-mono uppercase">Document Viewer</h3>
+            </div>
+            <button onclick="closeViewer()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded text-xs font-bold uppercase transition-colors">
+                <i class="fas fa-xmark mr-1"></i> Close Secure View
+            </button>
+        </div>
+        <div id="viewer-body" class="flex-1 bg-slate-950 p-6 flex items-center justify-center overflow-auto">
+            <!-- Dynamic decrypted content will be injected here -->
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="custom-modal" class="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 p-6 rounded-lg shadow-2xl max-w-sm w-full text-center">
+            <i id="modal-icon" class="fas fa-info-circle text-4xl text-emerald-500 mb-4"></i>
+            <h3 id="modal-title" class="text-lg font-bold text-white uppercase tracking-widest mb-2">Notice</h3>
+            <p id="modal-msg" class="text-slate-400 text-sm mb-6"></p>
+            <button onclick="document.getElementById('custom-modal').classList.add('hidden')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white py-2 px-6 rounded text-sm uppercase tracking-wider font-bold transition-colors w-full">Acknowledge</button>
+        </div>
+    </div>
+
+    <div id="decrypt-modal" class="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center hidden backdrop-blur-md">
+        <div class="bg-slate-900 border-2 border-blue-600 p-8 rounded-lg max-w-md w-full shadow-[0_0_30px_rgba(37,99,235,0.3)]">
+            <div class="text-center mb-4">
+                <i class="fas fa-lock text-4xl text-blue-500 mb-2"></i>
+                <h3 class="text-xl font-bold text-white uppercase tracking-widest">Classified Access</h3>
+                <p class="text-slate-400 text-xs mt-1">Provide legal justification & decryption key.</p>
+            </div>
+            
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Legal Justification / Case Reason</label>
+                    <input type="text" id="custody-reason" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs outline-none focus:border-blue-500" placeholder="e.g. Court Order #8821, Trial Evidence Extraction">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Decryption Passcode</label>
+                    <div class="relative">
+                        <input type="password" id="input-decrypt-pass" class="w-full bg-slate-950 border border-slate-700 rounded p-3 pr-10 text-white focus:border-blue-500 outline-none font-mono text-center text-lg tracking-widest" placeholder="ENTER KEY">
+                        <button type="button" onclick="togglePassword('input-decrypt-pass', this)" class="absolute right-3 top-3 text-slate-500 hover:text-blue-500 focus:outline-none">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('decrypt-modal').classList.add('hidden')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2 rounded text-sm uppercase font-bold">Cancel</button>
+                <button onclick="processDownload()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-sm uppercase font-bold tracking-wider shadow-[0_0_10px_rgba(37,99,235,0.5)]"><i class="fas fa-unlock mr-2"></i> Decrypt & View</button>
+            </div>
+            <input type="hidden" id="target-doc-id">
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000';
+        let currentUser = null;
+        let currentUserRole = null;
+        let loadedDocuments = [];
+        let currentBlobUrl = null;
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = "password";
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) { binary += String.fromCharCode(bytes[i]); }
+            return window.btoa(binary);
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binary_string = window.atob(base64);
+            const bytes = new Uint8Array(binary_string.length);
+            for (let i = 0; i < binary_string.length; i++) { bytes[i] = binary_string.charCodeAt(i); }
+            return bytes.buffer;
+        }
+
+        function appendToTerminal(msg, colorClass = 'text-slate-400') {
+            const term = document.getElementById('crypto-terminal');
+            const div = document.createElement('div');
+            div.className = colorClass;
+            div.innerText = `> ${msg}`;
+            term.appendChild(div);
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function showModal(title, msg, icon) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerText = msg;
+            document.getElementById('modal-icon').className = `fas ${icon} text-4xl mb-4`;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function openForgotModal() {
+            document.getElementById('forgot-id').value = document.getElementById('auth-id').value;
+            document.getElementById('forgot-modal').classList.remove('hidden');
+        }
+
+        async function submitForgotPassword() {
+            const badgeId = document.getElementById('forgot-id').value.trim().toUpperCase();
+            const reason = document.getElementById('forgot-reason').value.trim();
+
+            if (!badgeId) { showModal("Notice", "Badge ID required.", "fa-ban text-yellow-500"); return; }
+
+            try {
+                const res = await fetch(`${API_URL}/forgot_password`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ badge_id: badgeId, reason: reason })
+                });
+                const data = await res.json();
+                document.getElementById('forgot-modal').classList.add('hidden');
+                if (res.ok) {
+                    showModal("Request Submitted", data.message, "fa-check-circle text-emerald-500");
+                } else {
+                    showModal("Error", data.message, "fa-triangle-exclamation text-red-500");
+                }
+            } catch(err) {
+                showModal("Network Error", "Unable to contact server.", "fa-wifi text-red-500");
+            }
+        }
+
+        document.getElementById('btn-register').addEventListener('click', async () => {
+            const badgeId = document.getElementById('auth-id').value.trim().toUpperCase();
+            const pass = document.getElementById('auth-pass').value;
+            const role = document.getElementById('auth-role').value;
+
+            if (!badgeId || !pass) { showModal("Notice", "Badge ID and Passcode required.", "fa-ban text-yellow-500"); return; }
+            
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ badge_id: badgeId, password: pass, role: role })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    const iconClass = (role === 'Admin' || role === 'Supervisor') ? "fa-shield-halved text-amber-500" : "fa-check-circle text-emerald-500";
+                    showModal("Registration Result", data.message, iconClass);
+                } else {
+                    showModal("Registration Error", data.message || "Failed to register.", "fa-triangle-exclamation text-red-500");
+                }
+            } catch (err) {
+                showModal("Network Error", "Cannot connect to server.", "fa-wifi text-red-500");
+            }
+        });
+
+        document.getElementById('btn-login').addEventListener('click', async () => {
+            const badge = document.getElementById('auth-id').value.trim().toUpperCase();
+            const pass = document.getElementById('auth-pass').value;
+
+            if (!badge || !pass) return;
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ badge_id: badge, password: pass })
+                });
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    currentUser = badge;
+                    currentUserRole = data.role;
+                    enterSystem(badge);
+                } else {
+                    showModal("Access Denied", data.message, "fa-triangle-exclamation text-red-500");
+                }
+            } catch (err) {
+                showModal("Network Error", "Cannot connect to Backend Server.", "fa-wifi text-red-500");
+            }
+        });
+
+        function enterSystem(badge) {
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('sidebar').classList.remove('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('user-display').innerText = badge;
+            document.getElementById('user-role-display').innerText = `ROLE: ${currentUserRole.toUpperCase()}`;
+
+            if (currentUserRole.toLowerCase() === 'admin') {
+                document.getElementById('admin-approval-panel').classList.remove('hidden');
+            }
+
+            switchTab('upload');
+            loadVault();
+            loadAudit();
+            if (currentUserRole.toLowerCase() === 'admin') {
+                loadPendingApprovals();
+                loadPendingResets();
+            }
+        }
+
+        async function loadPendingApprovals() {
+            try {
+                const res = await fetch(`${API_URL}/admin/pending_users`, {
+                    headers: { 'X-User-ID': currentUser }
+                });
+                const pendingUsers = await res.json();
+                const tbody = document.getElementById('pending-users-table');
+                tbody.innerHTML = '';
+
+                if (!pendingUsers || pendingUsers.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-3 text-xs text-slate-500 text-center">No pending user registrations found.</td></tr>`;
+                    return;
+                }
+
+                pendingUsers.forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-slate-800/50';
+                    tr.innerHTML = `
+                        <td class="px-4 py-2 font-mono text-xs text-white">${u.badge_id}</td>
+                        <td class="px-4 py-2 text-xs text-emerald-400">${u.role}</td>
+                        <td class="px-4 py-2 text-right space-x-2">
+                            <button onclick="approveUser('${u.badge_id}', true)" class="bg-emerald-600/80 hover:bg-emerald-500 text-white text-[10px] px-2.5 py-1 rounded font-bold uppercase">Approve</button>
+                            <button onclick="approveUser('${u.badge_id}', false)" class="bg-red-600/80 hover:bg-red-500 text-white text-[10px] px-2.5 py-1 rounded font-bold uppercase">Reject</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Failed to fetch pending approvals.", err);
+            }
+        }
+
+        async function loadPendingResets() {
+            try {
+                const res = await fetch(`${API_URL}/admin/pending_resets`, {
+                    headers: { 'X-User-ID': currentUser }
+                });
+                const resets = await res.json();
+                const tbody = document.getElementById('pending-resets-table');
+                tbody.innerHTML = '';
+
+                if (!resets || resets.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-3 text-xs text-slate-500 text-center">No pending password reset requests.</td></tr>`;
+                    return;
+                }
+
+                resets.forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-slate-800/50';
+                    tr.innerHTML = `
+                        <td class="px-4 py-2 font-mono text-xs text-white">${r.badge_id}</td>
+                        <td class="px-4 py-2 text-xs text-slate-400">${r.reason}</td>
+                        <td class="px-4 py-2 text-right space-x-2">
+                            <button onclick="openAdminResetModal('${r.request_id}', '${r.badge_id}')" class="bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] px-2.5 py-1 rounded font-bold uppercase">Reset</button>
+                            <button onclick="rejectReset('${r.request_id}', '${r.badge_id}')" class="bg-red-600/80 hover:bg-red-500 text-white text-[10px] px-2.5 py-1 rounded font-bold uppercase">Reject</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Failed to fetch reset requests.", err);
+            }
+        }
+
+        function openAdminResetModal(requestId, badgeId) {
+            document.getElementById('reset-request-id').value = requestId;
+            document.getElementById('reset-target-badge').innerText = badgeId;
+            document.getElementById('admin-temp-pass').value = '';
+            document.getElementById('admin-reset-modal').classList.remove('hidden');
+        }
+
+        async function processAdminReset(approved) {
+            const reqId = document.getElementById('reset-request-id').value;
+            const badgeId = document.getElementById('reset-target-badge').innerText;
+            const tempPass = document.getElementById('admin-temp-pass').value;
+
+            if (approved && !tempPass) { showModal("Notice", "Temporary passcode required.", "fa-ban text-yellow-500"); return; }
+
+            try {
+                const res = await fetch(`${API_URL}/admin/reset_password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': currentUser },
+                    body: JSON.stringify({ request_id: reqId, badge_id: badgeId, new_password: tempPass, approved: approved })
+                });
+                const data = await res.json();
+                document.getElementById('admin-reset-modal').classList.add('hidden');
+                if (res.ok) {
+                    showModal("Admin Action Complete", data.message, "fa-check-circle text-emerald-500");
+                    loadPendingResets();
+                    loadAudit();
+                } else {
+                    showModal("Error", data.message, "fa-triangle-exclamation text-red-500");
+                }
+            } catch(err) {
+                showModal("Network Error", "Failed to reach server.", "fa-wifi text-red-500");
+            }
+        }
+
+        async function rejectReset(requestId, badgeId) {
+            document.getElementById('reset-request-id').value = requestId;
+            document.getElementById('reset-target-badge').innerText = badgeId;
+            await processAdminReset(false);
+        }
+
+        async function approveUser(badgeId, isApproved) {
+            try {
+                const res = await fetch(`${API_URL}/admin/approve_user`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-User-ID': currentUser 
+                    },
+                    body: JSON.stringify({ 
+                        target_badge_id: badgeId, 
+                        approved: isApproved 
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.status === 'success') {
+                    showModal("Admin Approval Result", data.message, isApproved ? "fa-check-circle text-emerald-500" : "fa-ban text-red-500");
+                    await loadPendingApprovals();
+                } else {
+                    showModal("Approval Failed", data.message || "Could not process request.", "fa-triangle-exclamation text-red-500");
+                }
+            } catch (err) {
+                console.error("Approval Request Error:", err);
+                showModal("Network Error", "Failed to communicate with the approval endpoint.", "fa-wifi text-red-500");
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-emerald-400', 'bg-slate-950', 'border-slate-800', 'shadow-inner');
+                el.classList.add('text-slate-400', 'border-transparent');
+            });
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            const btn = document.getElementById(`nav-${tabName}`);
+            btn.classList.add('text-emerald-400', 'bg-slate-950', 'border-slate-800', 'shadow-inner');
+            const titles = { 'upload': 'Secure Ingestion', 'vault': 'Classified Vault', 'audit': 'Immutable Ledger & Admin Panel' };
+            document.getElementById('current-tab-title').innerText = titles[tabName];
+        }
+
+        document.getElementById('btn-process-upload').addEventListener('click', async () => {
+            const fileInput = document.getElementById('file-input');
+            const docType = document.getElementById('doc-type').value;
+            const password = document.getElementById('file-password').value;
+            const hours = parseInt(document.getElementById('time-limit-hours').value) || 0;
+
+            if (fileInput.files.length === 0) { showModal("Notice", "Select a file.", "fa-ban text-red-500"); return; }
+            if (!password) { showModal("Security Policy", "A decryption password is required.", "fa-key text-yellow-500"); return; }
+
+            const file = fileInput.files[0];
+            const btn = document.getElementById('btn-process-upload');
+            btn.disabled = true; btn.innerText = "Encrypting & Signing...";
+
+            try {
+                appendToTerminal(`Reading file: ${file.name}`);
+                const arrayBuffer = await file.arrayBuffer();
+
+                const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+                const originalHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                appendToTerminal(`SHA-256 Generated: ${originalHash.substring(0, 16)}...`, 'text-blue-400');
+
+                const keyPair = await window.crypto.subtle.generateKey(
+                    { name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]
+                );
+                const signatureBuffer = await window.crypto.subtle.sign(
+                    { name: "ECDSA", hash: { name: "SHA-256" } }, keyPair.privateKey, arrayBuffer
+                );
+                const exportedPubKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+                appendToTerminal(`ECDSA Digital Signature Applied.`, 'text-purple-400');
+
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+                const key = await crypto.subtle.deriveKey(
+                    { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                    keyMaterial, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]
+                );
+
+                const encryptedContent = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, arrayBuffer);
+                const expiresAt = hours > 0 ? Date.now() + (hours * 3600 * 1000) : 0;
+
+                const docRecord = {
+                    id: 'DOC-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                    filename: file.name, category: docType, mimeType: file.type || 'application/octet-stream',
+                    uploader: currentUser, timestamp: Date.now(), originalHash: originalHash,
+                    data: arrayBufferToBase64(encryptedContent), salt: arrayBufferToBase64(salt), iv: arrayBufferToBase64(iv),
+                    expires_at: expiresAt, signature: arrayBufferToBase64(signatureBuffer), public_key: arrayBufferToBase64(exportedPubKey)
+                };
+
+                await fetch(`${API_URL}/upload`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': currentUser },
+                    body: JSON.stringify(docRecord)
+                });
+
+                appendToTerminal(`Encryption & Notarization Complete. Saved to SQL.`, 'text-emerald-400');
+                
+                setTimeout(() => {
+                    btn.disabled = false; btn.innerText = "Sign, Encrypt & Submit to Vault";
+                    fileInput.value = ''; document.getElementById('file-password').value = '';
+                    showModal("Upload Successful", "Document signed and encrypted into SQL Vault.", "fa-check-circle text-emerald-500");
+                    loadVault(); loadAudit();
+                }, 1000);
+
+            } catch (err) {
+                appendToTerminal(`ERROR: ${err.message}`, 'text-red-500');
+                btn.disabled = false; btn.innerText = "Sign, Encrypt & Submit to Vault";
+            }
+        });
+
+        async function loadVault() {
+            const res = await fetch(`${API_URL}/documents`);
+            loadedDocuments = await res.json();
+            const tbody = document.getElementById('vault-table-body');
+            tbody.innerHTML = '';
+            
+            loadedDocuments.forEach(doc => {
+                const dateStatus = doc.is_expired ? '<span class="text-red-400 font-bold"><i class="fas fa-clock"></i> EXPIRED</span>' : (doc.expires_at ? new Date(doc.expires_at).toLocaleString() : 'Permanent');
+                let icon = doc.category === 'Classified' ? 'fa-user-secret text-red-400' : 'fa-file-lines';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800 transition-colors border-b border-slate-800/50';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-bold text-xs uppercase"><i class="fas ${icon} mr-2"></i> ${doc.category}</td>
+                    <td class="px-6 py-4 font-medium text-white text-sm">${doc.filename}</td>
+                    <td class="px-6 py-4 text-xs font-mono text-emerald-500">${doc.uploader}</td>
+                    <td class="px-6 py-4 text-xs text-slate-400">${dateStatus}</td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        ${doc.is_expired ? '<span class="text-xs text-slate-500 font-bold">REVOKED</span>' : 
+                        `<button onclick="openDecryptModal('${doc.id}')" class="bg-blue-900/40 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-800 px-3 py-1.5 rounded text-xs font-bold uppercase transition-colors">
+                            <i class="fas fa-eye mr-1"></i> View Document
+                        </button>`}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openDecryptModal(docId) {
+            document.getElementById('target-doc-id').value = docId;
+            document.getElementById('input-decrypt-pass').value = '';
+            document.getElementById('custody-reason').value = '';
+            document.getElementById('decrypt-modal').classList.remove('hidden');
+        }
+
+        async function processDownload() {
+            const docId = document.getElementById('target-doc-id').value;
+            const password = document.getElementById('input-decrypt-pass').value;
+            const reason = document.getElementById('custody-reason').value;
+
+            if (!reason) { showModal("Chain of Custody Policy", "A legal justification reason is required.", "fa-scale-balanced text-yellow-500"); return; }
+
+            document.getElementById('decrypt-modal').classList.add('hidden');
+            const doc = loadedDocuments.find(d => d.id === docId);
+
+            await fetch(`${API_URL}/log_custody`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user: currentUser, action: 'CUSTODY_VIEW_ATTEMPT', details: `Decrypted and viewed ${doc.filename} (${doc.id})`, reason: reason })
+            });
+
+            try {
+                const salt = base64ToArrayBuffer(doc.salt);
+                const iv = base64ToArrayBuffer(doc.iv);
+                const encryptedBuffer = base64ToArrayBuffer(doc.data);
+                
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+                const key = await crypto.subtle.deriveKey(
+                    { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                    keyMaterial, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]
+                );
+
+                const decryptedBuffer = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, encryptedBuffer);
+                
+                // Construct inline memory URL for viewing inside browser modal
+                const blob = new Blob([decryptedBuffer], { type: doc.mimeType || 'application/octet-stream' });
+                if (currentBlobUrl) window.URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = window.URL.createObjectURL(blob);
+
+                renderDocumentViewer(doc.filename, doc.mimeType, currentBlobUrl, decryptedBuffer);
+                loadAudit();
+            } catch (err) {
+                showModal("Access Denied", "Invalid decryption key or corrupted data.", "fa-triangle-exclamation text-red-500");
+            }
+        }
+
+        function renderDocumentViewer(filename, mimeType, blobUrl, decryptedBuffer) {
+            document.getElementById('viewer-filename').innerText = filename;
+            const body = document.getElementById('viewer-body');
+            body.innerHTML = '';
+
+            if (mimeType.startsWith('image/')) {
+                body.innerHTML = `<img src="${blobUrl}" class="max-h-full max-w-full rounded border border-slate-700 shadow-2xl object-contain" />`;
+            } else if (mimeType.startsWith('text/') || mimeType === 'application/json') {
+                const text = new TextDecoder().decode(decryptedBuffer);
+                body.innerHTML = `<pre class="w-full h-full bg-slate-900 border border-slate-800 rounded p-4 font-mono text-slate-200 text-xs overflow-auto">${escapeHtml(text)}</pre>`;
+            } else {
+                body.innerHTML = `<iframe src="${blobUrl}" class="w-full h-full border border-slate-800 rounded bg-white"></iframe>`;
+            }
+
+            document.getElementById('viewer-modal').classList.remove('hidden');
+        }
+
+        function closeViewer() {
+            document.getElementById('viewer-modal').classList.add('hidden');
+            document.getElementById('viewer-body').innerHTML = '';
+            if (currentBlobUrl) {
+                window.URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
+            }
+        }
+
+        function escapeHtml(string) {
+            return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        async function loadAudit() {
+            const res = await fetch(`${API_URL}/audit`, {
+                headers: { 'X-User-ID': currentUser }
+            });
+
+            const container = document.getElementById('audit-timeline');
+            container.innerHTML = '';
+
+            if (res.status === 403) {
+                container.innerHTML = `<div class="p-4 bg-red-950/40 border border-red-800 rounded text-red-400 text-xs font-mono"><i class="fas fa-lock mr-2"></i> RESTRICTED: Requires Supervisor or Admin clearance to view Chain-of-Custody logs.</div>`;
+                return;
+            }
+
+            const logs = await res.json();
+            logs.forEach(log => {
+                const date = new Date(log.timestamp).toLocaleString();
+                let dotColor = 'bg-slate-600', textClass = 'text-slate-300';
+                
+                if (log.action.includes('SECURITY') || log.action.includes('FAILED') || log.action.includes('REJECTED')) {
+                    dotColor = 'bg-red-500'; textClass = 'text-red-400 font-bold';
+                } else if (log.action.includes('UPLOAD') || log.action.includes('INGESTION') || log.action.includes('APPROVED')) {
+                    dotColor = 'bg-emerald-500'; textClass = 'text-emerald-400';
+                } else if (log.action.includes('CUSTODY') || log.action.includes('RESET')) {
+                    dotColor = 'bg-blue-500'; textClass = 'text-blue-400';
+                }
+
+                const item = document.createElement('div');
+                item.className = 'relative pl-6 pb-6 last:pb-0';
+                item.innerHTML = `
+                    <div class="absolute left-[-5px] top-1.5 w-2.5 h-2.5 rounded-full ${dotColor} border border-slate-900"></div>
+                    <div class="flex justify-between items-baseline mb-1">
+                        <span class="text-[10px] font-mono text-slate-500">${date} | ${log.id}</span>
+                        <span class="text-[10px] font-mono font-bold text-slate-400">${log.user}</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded">
+                        <h4 class="text-xs font-bold uppercase ${textClass}">[${log.action}]</h4>
+                        <p class="text-xs text-slate-300 mt-1">${log.details}</p>
+                        <p class="text-[11px] font-mono text-slate-400 mt-1"><i class="fas fa-gavel mr-1"></i> Justification: ${log.reason}</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>
