@@ -65,4 +65,4 @@ Hosting the Frontend (e.g., Cloudflare Pages / GitHub Pages)
 
     Update the API_URL variable in index.html to point to your live backend domain (e.g., [https://your-app-name.onrender.com](https://your-app-name.onrender.com)).
 
-    Deploy index.html via Cloudflare Pages, GitHub Pages, or any static web host.
+    Deploy index.html via Cloudflare Pages, GitHub Pages, or any static web host..
