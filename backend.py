@@ -1,7 +1,7 @@
 import sqlite3
 import hashlib
 import uuid
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -87,6 +87,10 @@ def log_action(user, action, details, reason):
     ''', (log_id, user, action, details, reason, timestamp))
     conn.commit()
     conn.close()
+
+@app.route('/')
+def serve_frontend():
+    return send_from_directory('.', 'FRONTEND.html')
 
 @app.route('/register', methods=['POST'])
 def register():
